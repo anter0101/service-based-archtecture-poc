@@ -1,68 +1,66 @@
 import { Injectable, NestMiddleware } from '@nestjs/common';
 import { NextFunction, Request, Response } from 'express';
-import { ServiceRouter } from '../routing/service-router';
-
-const HOP_BY_HOP = new Set([
-  'connection',
-  'content-length',
-  'host',
-  'keep-alive',
-  'proxy-authenticate',
-  'proxy-authorization',
-  'te',
-  'trailer',
-  'transfer-encoding',
-  'upgrade',
-]);
+import { createProxyMiddleware, RequestHandler } from 'http-proxy-middleware';
+import {
+  matchServiceRoute,
+  pathnameOf,
+  targetUrlFor,
+  type ServiceRoute,
+} from '../routing/service-routes';
 
 @Injectable()
 export class ProxyMiddleware implements NestMiddleware {
-  constructor(private readonly router: ServiceRouter) {}
+  private readonly handlers = new Map<string, RequestHandler>();
 
-  async use(req: Request, res: Response, next: NextFunction) {
-    const path = (req.originalUrl ?? req.url).split('?')[0] ?? req.path;
-    const route = this.router.resolve(path);
-
-    if (!route || route.handledByModule) {
+  use(req: Request, res: Response, next: NextFunction) {
+    const pathname = pathnameOf(req.originalUrl ?? req.url);
+    const route = matchServiceRoute(pathname);
+    if (!route) {
       next();
       return;
     }
 
-    const target = `${this.router.getTargetUrl(route.service)}${req.originalUrl}`;
-    const headers = new Headers();
-    for (const [key, value] of Object.entries(req.headers)) {
-      if (!value || HOP_BY_HOP.has(key.toLowerCase())) {
-        continue;
-      }
-      headers.set(key, Array.isArray(value) ? value.join(',') : value);
+    this.handlerFor(route)(req, res, next);
+  }
+
+  private handlerFor(route: ServiceRoute): RequestHandler {
+    const cached = this.handlers.get(route.prefix);
+    if (cached) {
+      return cached;
     }
 
-    const method = req.method.toUpperCase();
-    const init: RequestInit = { method, headers };
-    if (!['GET', 'HEAD'].includes(method) && req.body != null) {
-      init.body =
-        typeof req.body === 'string' ? req.body : JSON.stringify(req.body);
-      if (!headers.has('content-type')) {
-        headers.set('content-type', 'application/json');
-      }
-    }
-
-    try {
-      const upstream = await fetch(target, init);
-      res.status(upstream.status);
-      upstream.headers.forEach((value, key) => {
-        if (!HOP_BY_HOP.has(key.toLowerCase())) {
-          res.setHeader(key, value);
+    const escapedPrefix = route.prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const handler = createProxyMiddleware({
+      target: targetUrlFor(route),
+      changeOrigin: true,
+      logLevel: 'silent',
+      pathRewrite: { [`^${escapedPrefix}`]: '' },
+      onProxyReq: (proxyReq, incoming) => {
+        const method = incoming.method?.toUpperCase();
+        if (!method || ['GET', 'HEAD'].includes(method)) {
+          return;
         }
-      });
-      res.send(Buffer.from(await upstream.arrayBuffer()));
-    } catch {
-      if (!res.headersSent) {
-        res.status(502).json({
-          statusCode: 502,
-          message: `Upstream ${route.service} is unavailable`,
-        });
-      }
-    }
+        const body = (incoming as Request).body as unknown;
+        if (body == null || typeof body !== 'object') {
+          return;
+        }
+        const payload = JSON.stringify(body);
+        proxyReq.setHeader('Content-Type', 'application/json');
+        proxyReq.setHeader('Content-Length', Buffer.byteLength(payload));
+        proxyReq.write(payload);
+      },
+      onError: (_err, _incoming, outgoing) => {
+        const response = outgoing as Response;
+        if (!response.headersSent) {
+          response.status(502).json({
+            statusCode: 502,
+            message: 'Upstream service is unavailable',
+          });
+        }
+      },
+    });
+
+    this.handlers.set(route.prefix, handler);
+    return handler;
   }
 }

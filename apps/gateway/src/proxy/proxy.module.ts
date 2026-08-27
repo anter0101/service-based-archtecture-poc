@@ -1,34 +1,20 @@
-import {
-  MiddlewareConsumer,
-  Module,
-  NestModule,
-  RequestMethod,
-} from '@nestjs/common';
+import { MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { serviceRoutes } from '../routing/service-routes';
+import { jwtExcludeRoutes, proxyRoutes } from '../routing/service-routes';
 import { ProxyMiddleware } from './proxy.middleware';
-
-function prefixToPath(prefix: string) {
-  return `${prefix.replace(/^\//, '')}/(.*)`;
-}
 
 @Module({
   providers: [ProxyMiddleware],
 })
 export class ProxyModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
-    const proxied = serviceRoutes.filter((route) => !route.handledByModule);
-    const protectedRoutes = proxied
-      .filter((route) => route.requireAuth)
-      .map((route) => ({
-        path: prefixToPath(route.prefix),
-        method: RequestMethod.ALL,
-      }));
+    const routes = proxyRoutes();
 
-    if (protectedRoutes.length > 0) {
-      consumer.apply(JwtAuthGuard).forRoutes(...protectedRoutes);
-    }
+    consumer
+      .apply(JwtAuthGuard)
+      .exclude(...jwtExcludeRoutes())
+      .forRoutes(...routes);
 
-    consumer.apply(ProxyMiddleware).forRoutes('*');
+    consumer.apply(ProxyMiddleware).forRoutes(...routes);
   }
 }

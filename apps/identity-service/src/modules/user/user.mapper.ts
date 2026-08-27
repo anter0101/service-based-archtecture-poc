@@ -52,7 +52,7 @@ export const mapCreateUserDtoToEntity = (dto: CreateUserDTO): User => {
   const user = new User();
   user.name = dto.name;
   user.email = dto.email;
-  user.password = dto.password;
+  user.passwordHash = dto.password;
   return user;
 };
 
@@ -61,6 +61,6 @@ export const mapUpdateUserDtoToEntity = (dto: UpdateUserDTO): User => {
   if (dto.id !== undefined) user.id = dto.id;
   if (dto.name !== undefined) user.name = dto.name;
   if (dto.email !== undefined) user.email = dto.email;
-  if (dto.password !== undefined) user.password = dto.password;
+  if (dto.password !== undefined) user.passwordHash = dto.password;
   return user;
 };

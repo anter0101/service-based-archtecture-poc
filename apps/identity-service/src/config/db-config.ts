@@ -11,6 +11,8 @@ export default class PostgresTypeorm implements TypeOrmOptionsFactory {
   createTypeOrmOptions(): TypeOrmModuleOptions {
     return {
       ...postgresConnectionFromConfig(this.configService),
+      schema: 'identity',
+      synchronize: false,
       autoLoadEntities: true,
       migrations: [CreateUsers1756280000000],
     };

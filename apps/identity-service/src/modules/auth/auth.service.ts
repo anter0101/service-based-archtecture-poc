@@ -29,7 +29,7 @@ export class AuthService {
     const user = new User();
     user.name = dto.name;
     user.email = dto.email;
-    user.password = dto.password;
+    user.passwordHash = dto.password;
     const saved = await this.userService.save(user);
     return this.issue(saved);
   }
@@ -40,7 +40,7 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
 
-    const matches = await compare(dto.password, user.password);
+    const matches = await compare(dto.password, user.passwordHash);
     if (!matches) {
       throw new UnauthorizedException('Invalid credentials');
     }
@@ -50,7 +50,10 @@ export class AuthService {
 
   private issue(user: User) {
     return {
-      accessToken: this.jwtService.sign({ sub: user.id, email: user.email }),
+      accessToken: this.jwtService.sign({
+        sub: String(user.id),
+        email: user.email,
+      }),
       user: mapUserToDtoSelective(user),
     };
   }

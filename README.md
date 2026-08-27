@@ -1,20 +1,20 @@
 # Service-based architecture template
 
-NestJS **monorepo**: each domain is its own app under `apps/`, shared code lives in `libs/`. Domain DTOs stay in the service that owns them. The gateway validates JWTs; identity-service issues them.
+NestJS **monorepo** POC: a thin API Gateway plus an Identity service sharing one PostgreSQL database (`identity` schema). Domain DTOs and entities stay in the service that owns them.
 
 ```
 apps/
-  gateway/                 HTTP entry (port 8080): JWT, routing table, proxy
-  identity-service/        users + auth (register/login) on port 8081
+  gateway/              public HTTP entry (port 3000): JWT, routing, proxy
+  identity-service/     users + auth (port 3001), owns identity schema
 libs/
-  common/                  bootstrap, filters, interceptors, base types
-  database/                shared Postgres TypeORM connection
+  common/               bootstrap, filters, interceptors, base types
+  database/             generic Postgres connection helpers
 docker/
   gateway.Dockerfile
   identity.Dockerfile
 ```
 
-Add a service with `pnpm exec nest generate app billing-service`, register it in `libs/common` `services.ts`, then add a prefix in `apps/gateway/src/routing/service-routes.ts`. Routes without `handledByModule` are forwarded by the gateway proxy.
+Gateway decides whether a request is allowed and which service should receive it. Identity owns registration, login, password hashing, and JWT issuance.
 
 ## Setup
 
@@ -22,16 +22,28 @@ Add a service with `pnpm exec nest generate app billing-service`, register it in
 cp .env.example .env.development
 pnpm install
 docker compose up postgres -d
-pnpm start:identity:dev
-pnpm start:dev
+pnpm migration:identity:run
+pnpm dev
 ```
 
 | App | URL |
 | --- | --- |
-| Gateway | http://localhost:8080/api/docs |
-| Identity | http://localhost:8081/api/docs |
+| Gateway | http://localhost:3000/api/docs |
+| Identity (dev only) | http://localhost:3001/api/docs |
 
-Register and login are public (`POST /api/auth/register`, `POST /api/auth/login`). User routes on the gateway require `Authorization: Bearer <token>`.
+Public through the gateway:
+
+- `POST /api/identity/auth/register`
+- `POST /api/identity/auth/login`
+- `GET /api/health`
+
+Protected (Bearer JWT):
+
+- `GET /api/identity/users/me`
+- `GET /api/identity/users`
+- `PATCH /api/identity/users/:id`
+
+The gateway rewrites `/api/identity/auth/login` to Identity `/auth/login`.
 
 ## Docker
 
@@ -39,13 +51,16 @@ Register and login are public (`POST /api/auth/register`, `POST /api/auth/login`
 docker compose up --build
 ```
 
-Nginx fronts the gateway on http://localhost
+Inside Compose, Gateway talks to Identity at `http://identity-service:3001`. Nginx only terminates HTTP and forwards to the gateway; it does not validate JWTs.
 
 ## Commands
 
 ```bash
+pnpm dev
+pnpm dev:gateway
+pnpm dev:identity
 pnpm test
 pnpm test:e2e
 pnpm build
-pnpm migration:run
+pnpm migration:identity:run
 ```

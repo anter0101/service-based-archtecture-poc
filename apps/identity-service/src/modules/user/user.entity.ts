@@ -1,7 +1,7 @@
 import { Entity, Column } from 'typeorm';
 import { BaseEntity } from '@app/common';
 
-@Entity('users')
+@Entity({ name: 'users', schema: 'identity' })
 export class User extends BaseEntity {
   @Column({ type: 'varchar', nullable: false })
   name: string;
@@ -9,6 +9,11 @@ export class User extends BaseEntity {
   @Column({ unique: true, type: 'varchar', nullable: false })
   email: string;
 
-  @Column({ type: 'varchar', nullable: false, select: false })
-  password: string;
+  @Column({
+    name: 'password_hash',
+    type: 'varchar',
+    nullable: false,
+    select: false,
+  })
+  passwordHash: string;
 }

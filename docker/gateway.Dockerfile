@@ -30,6 +30,6 @@ RUN pnpm install --prod --frozen-lockfile && pnpm store prune
 
 COPY --from=build /app/dist ./dist
 
-EXPOSE 8080
+EXPOSE 3000
 
 CMD ["node", "dist/apps/gateway/main"]

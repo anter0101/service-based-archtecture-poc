@@ -8,12 +8,15 @@ import {
   Logger,
   NotFoundException,
   Param,
+  Patch,
   Post,
-  Put,
   Query,
   Req,
+  UnauthorizedException,
+  UseGuards,
 } from '@nestjs/common';
 import {
+  ApiBearerAuth,
   ApiBody,
   ApiExtraModels,
   ApiOperation,
@@ -23,6 +26,7 @@ import {
 } from '@nestjs/swagger';
 import { HeaderUtil, PageRequest } from '@app/common';
 import type { Request } from '@app/common';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { CreateUserDTO } from './dto/create-user.dto';
 import { UpdateUserDTO } from './dto/update-user.dto';
 import { UserDTO } from './dto/user.dto';
@@ -34,13 +38,30 @@ import {
   mapUserToDtoSelective,
 } from './user.mapper';
 
-@Controller('api/users')
+@Controller('users')
 @ApiTags('users-module')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard)
 @ApiExtraModels(UserDTO, CreateUserDTO, UpdateUserDTO, UserQueryDTO)
 export class UserController {
   logger = new Logger('UserController');
 
   constructor(private readonly userService: UserService) {}
+
+  @Get('/me')
+  @ApiOperation({ summary: 'Get the authenticated user' })
+  @ApiResponse({ status: 200, description: 'Current user', type: UserDTO })
+  async getMe(@Req() req: Request): Promise<Partial<UserDTO>> {
+    const id = req.user?.id ?? req.user?.sub;
+    if (!id) {
+      throw new UnauthorizedException();
+    }
+    const user = await this.userService.findById(id);
+    if (!user) {
+      throw new NotFoundException(`User with id ${id} not found`);
+    }
+    return mapUserToDtoSelective(user);
+  }
 
   @Get('/')
   @ApiOperation({ summary: 'Get the list of users paginated' })
@@ -102,7 +123,7 @@ export class UserController {
     return mapUserToDtoSelective(saved);
   }
 
-  @Put('/:id')
+  @Patch('/:id')
   @ApiOperation({ summary: 'Update a user' })
   @ApiParam({ name: 'id' })
   @ApiBody({ type: UpdateUserDTO })

@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 import { sign, verify, type SignOptions } from 'jsonwebtoken';
 
 export type JwtPayload = {
-  sub: number;
+  sub: string;
   email: string;
 };
 
@@ -21,11 +21,11 @@ export class JwtService {
   }
 
   private get secret(): string {
-    return this.configService.get<string>('APP_SECRET_KEY', 'change-me');
+    return this.configService.get<string>('JWT_SECRET', 'change-me');
   }
 
   private get expiresIn(): SignOptions['expiresIn'] {
     return (this.configService.get<string>('JWT_EXPIRES_IN') ??
-      '1d') as SignOptions['expiresIn'];
+      '15m') as SignOptions['expiresIn'];
   }
 }

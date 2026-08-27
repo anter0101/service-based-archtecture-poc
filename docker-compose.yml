@@ -5,14 +5,13 @@ services:
       dockerfile: docker/gateway.Dockerfile
       target: production
     ports:
-      - "${GATEWAY_PORT:-8080}:8080"
+      - "${GATEWAY_PORT:-3000}:3000"
     environment:
       NODE_ENV: production
-      APP: gateway
-      GATEWAY_PORT: 8080
-      IDENTITY_URL: http://identity-service:8081
-      APP_SECRET_KEY: ${APP_SECRET_KEY:-change-me}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
+      GATEWAY_PORT: 3000
+      IDENTITY_SERVICE_URL: http://identity-service:3001
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
     depends_on:
       identity-service:
         condition: service_started
@@ -24,22 +23,20 @@ services:
       dockerfile: docker/identity.Dockerfile
       target: production
     ports:
-      - "${IDENTITY_PORT:-8081}:8081"
+      - "${IDENTITY_SERVICE_PORT:-3001}:3001"
     environment:
       NODE_ENV: production
-      APP: identity-service
-      IDENTITY_PORT: 8081
-      APP_SECRET_KEY: ${APP_SECRET_KEY:-change-me}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-1d}
-      DATABASE_NAME: ${POSTGRES_DB:-template_backend}
-      DATABASE_HOST: postgres
-      DATABASE_PORT: 5432
-      DATABASE_USER: ${POSTGRES_USER:-postgres}
-      DATABASE_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
-      DATABASE_SSL: false
-      DATABASE_LOGGING: false
-      DATABASE_SYNCHRONIZE: false
-      DATABASE_MIGRATIONS_RUN: true
+      IDENTITY_SERVICE_PORT: 3001
+      JWT_SECRET: ${JWT_SECRET:-change-me}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      DB_NAME: ${POSTGRES_DB:-vara360}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_USERNAME: ${POSTGRES_USER:-postgres}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      DB_SSL: false
+      DB_LOGGING: false
+      DB_MIGRATIONS_RUN: true
     depends_on:
       postgres:
         condition: service_healthy
@@ -50,7 +47,7 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-template_backend}
+      POSTGRES_DB: ${POSTGRES_DB:-vara360}
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
     volumes:

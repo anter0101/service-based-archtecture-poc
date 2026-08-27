@@ -26,9 +26,11 @@ export class CreateUsers1756280000000 implements MigrationInterface {
   name = 'CreateUsers1756280000000';
 
   public async up(queryRunner: QueryRunner): Promise<void> {
+    await queryRunner.createSchema('identity', true);
     await queryRunner.createTable(
       new Table({
         name: 'users',
+        schema: 'identity',
         columns: [
           ...baseColumns,
           { name: 'name', type: 'varchar', isNullable: false },
@@ -38,13 +40,14 @@ export class CreateUsers1756280000000 implements MigrationInterface {
             isNullable: false,
             isUnique: true,
           },
-          { name: 'password', type: 'varchar', isNullable: false },
+          { name: 'password_hash', type: 'varchar', isNullable: false },
         ],
       }),
     );
   }
 
   public async down(queryRunner: QueryRunner): Promise<void> {
-    await queryRunner.dropTable('users');
+    await queryRunner.dropTable('identity.users');
+    await queryRunner.dropSchema('identity', true);
   }
 }

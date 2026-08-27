@@ -3,7 +3,6 @@ import { ConfigModule } from '@nestjs/config';
 import { AuthModule } from './auth/auth.module';
 import { HealthModule } from './modules/health/health.module';
 import { ProxyModule } from './proxy/proxy.module';
-import { RoutingModule } from './routing/routing.module';
 
 @Module({
   imports: [
@@ -12,7 +11,6 @@ import { RoutingModule } from './routing/routing.module';
       envFilePath: ['.env.development', '.env'],
     }),
     AuthModule,
-    RoutingModule,
     ProxyModule,
     HealthModule,
   ],

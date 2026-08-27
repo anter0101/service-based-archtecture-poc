@@ -24,7 +24,7 @@ export class UserService {
   async findByEmailWithPassword(email: string): Promise<User | undefined> {
     const result = await this.userRepository
       .createQueryBuilder('user')
-      .addSelect('user.password')
+      .addSelect('user.passwordHash')
       .where('user.email = :email', { email })
       .getOne();
     return result || undefined;
@@ -62,11 +62,11 @@ export class UserService {
 
   private async hashPasswordIfNeeded(user: User): Promise<void> {
     if (
-      user.password &&
-      !user.password.startsWith('$2a$') &&
-      !user.password.startsWith('$2b$')
+      user.passwordHash &&
+      !user.passwordHash.startsWith('$2a$') &&
+      !user.passwordHash.startsWith('$2b$')
     ) {
-      user.password = await hash(user.password, 10);
+      user.passwordHash = await hash(user.passwordHash, 10);
     }
   }
 

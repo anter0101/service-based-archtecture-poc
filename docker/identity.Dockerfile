@@ -30,6 +30,6 @@ RUN pnpm install --prod --frozen-lockfile && pnpm store prune
 
 COPY --from=build /app/dist ./dist
 
-EXPOSE 8081
+EXPOSE 3001
 
 CMD ["node", "dist/apps/identity-service/main"]

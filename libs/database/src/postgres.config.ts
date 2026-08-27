@@ -10,7 +10,7 @@ type PostgresSettings = {
   database: string;
   ssl: boolean | { rejectUnauthorized: false };
   logging: boolean;
-  synchronize: boolean;
+  synchronize: false;
   migrationsRun: boolean;
 };
 
@@ -32,17 +32,20 @@ export function postgresSettings(
 ): PostgresSettings {
   return {
     type: 'postgres',
-    host: String(get('DATABASE_HOST') ?? ''),
-    port: Number(get('DATABASE_PORT') ?? 5432),
-    username: String(get('DATABASE_USER') ?? ''),
-    password: String(get('DATABASE_PASSWORD') ?? ''),
-    database: String(get('DATABASE_NAME') ?? ''),
-    ssl: readBoolean(get('DATABASE_SSL'), false)
+    host: String(get('DB_HOST') ?? get('DATABASE_HOST') ?? ''),
+    port: Number(get('DB_PORT') ?? get('DATABASE_PORT') ?? 5432),
+    username: String(get('DB_USERNAME') ?? get('DATABASE_USER') ?? ''),
+    password: String(get('DB_PASSWORD') ?? get('DATABASE_PASSWORD') ?? ''),
+    database: String(get('DB_NAME') ?? get('DATABASE_NAME') ?? ''),
+    ssl: readBoolean(get('DB_SSL') ?? get('DATABASE_SSL'), false)
       ? { rejectUnauthorized: false }
       : false,
-    logging: readBoolean(get('DATABASE_LOGGING'), true),
-    synchronize: readBoolean(get('DATABASE_SYNCHRONIZE'), false),
-    migrationsRun: readBoolean(get('DATABASE_MIGRATIONS_RUN'), true),
+    logging: readBoolean(get('DB_LOGGING') ?? get('DATABASE_LOGGING'), true),
+    synchronize: false,
+    migrationsRun: readBoolean(
+      get('DB_MIGRATIONS_RUN') ?? get('DATABASE_MIGRATIONS_RUN'),
+      true,
+    ),
   };
 }
 

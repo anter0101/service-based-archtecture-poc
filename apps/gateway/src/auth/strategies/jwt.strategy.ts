@@ -4,7 +4,7 @@ import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
 
 type JwtPayload = {
-  sub: number;
+  sub: string;
   email: string;
 };
 
@@ -14,11 +14,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('APP_SECRET_KEY', 'change-me'),
+      secretOrKey: configService.get<string>('JWT_SECRET', 'change-me'),
     });
   }
 
   validate(payload: JwtPayload) {
-    return { id: payload.sub, email: payload.email };
+    return { id: Number(payload.sub), email: payload.email };
   }
 }
