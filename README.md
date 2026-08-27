@@ -1,22 +1,30 @@
 # Service-based architecture template
 
-NestJS **monorepo** POC: a thin API Gateway plus an Identity service sharing one PostgreSQL database (`identity` schema). Domain DTOs and entities stay in the service that owns them.
+End-to-end POC: **NestJS backend services** + **federated Next.js frontends** that share one auth session and talk through an API gateway.
+
+**Read [CONCEPT.md](./CONCEPT.md)** for the architecture idea, diagrams, and auth model.
 
 ```
-apps/
-  gateway/              public HTTP entry (port 3000): JWT, routing, proxy
-  identity-service/     users + auth (port 3001), owns identity schema
-libs/
-  common/               bootstrap, filters, interceptors, base types
-  database/             generic Postgres connection helpers
-docker/
-  gateway.Dockerfile
-  identity.Dockerfile
+.
+├── apps/                         # NestJS services
+│   ├── gateway/                  # :3000 — JWT gate + proxy
+│   └── identity-service/         # :3001 — users + auth
+├── libs/
+│   ├── common/
+│   └── database/
+├── frontend/                     # Federated Next.js monorepo
+│   ├── apps/
+│   │   ├── auth/                 # :3002 — login / register / cookie
+│   │   ├── shell/                # :3003 — home
+│   │   └── dashboard/            # :3004 — users workspace
+│   └── packages/                 # @dms/ui, auth, api-client, i18n, types, config
+├── CONCEPT.md
+└── docker-compose.yml
 ```
 
-Gateway decides whether a request is allowed and which service should receive it. Identity owns registration, login, password hashing, and JWT issuance.
+---
 
-## Setup
+## Backend
 
 ```bash
 cp .env.example .env.development
@@ -28,32 +36,48 @@ pnpm dev
 
 | App | URL |
 | --- | --- |
-| Gateway | http://localhost:3000/api/docs |
-| Identity (dev only) | http://localhost:3001/api/docs |
+| Gateway Swagger | http://localhost:3000/api/docs |
+| Identity Swagger (dev) | http://localhost:3001/api/docs |
 
-Public through the gateway:
+Public: `POST /api/identity/auth/register`, `POST /api/identity/auth/login`, `GET /api/health`  
+Protected (Bearer JWT): `GET /api/identity/users/me`, `GET /api/identity/users`, …
 
-- `POST /api/identity/auth/register`
-- `POST /api/identity/auth/login`
-- `GET /api/health`
+---
 
-Protected (Bearer JWT):
+## Frontend
 
-- `GET /api/identity/users/me`
-- `GET /api/identity/users`
-- `PATCH /api/identity/users/:id`
+```bash
+cd frontend
+pnpm install
+cp .env.example apps/auth/.env.local
+cp .env.example apps/shell/.env.local
+cp .env.example apps/dashboard/.env.local
+pnpm dev
+```
 
-The gateway rewrites `/api/identity/auth/login` to Identity `/auth/login`.
+| App | URL |
+| --- | --- |
+| Auth | http://localhost:3002/en/login |
+| Shell | http://localhost:3003/en/home |
+| Dashboard | http://localhost:3004/en/dashboard |
 
-## Docker
+All three apps share `AUTH_SECRET` and a NextAuth session cookie. API calls go to the gateway with `Authorization: Bearer {accessToken}`.
+
+More detail: [frontend/README.md](./frontend/README.md) and [CONCEPT.md](./CONCEPT.md).
+
+---
+
+## Docker (backend)
 
 ```bash
 docker compose up --build
 ```
 
-Inside Compose, Gateway talks to Identity at `http://identity-service:3001`. Nginx only terminates HTTP and forwards to the gateway; it does not validate JWTs.
+Gateway → Identity at `http://identity-service:3001`. Nginx terminates HTTP only; it does not validate JWTs.
 
-## Commands
+---
+
+## Backend commands
 
 ```bash
 pnpm dev

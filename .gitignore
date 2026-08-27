@@ -43,6 +43,15 @@ lerna-debug.log*
 .env.test.local
 .env.production.local
 .env.local
+.env*.local
+
+# Frontend (Next.js monorepo)
+/frontend/node_modules
+/frontend/.next
+/frontend/.turbo
+/frontend/dist
+/frontend/apps/*/.next
+/frontend/apps/*/tsconfig.tsbuildinfo
 
 # temp directory
 .temp

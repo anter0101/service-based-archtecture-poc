@@ -1,0 +1,19 @@
+{
+  "appName": "DMS",
+  "logout": "Sign out",
+  "home": "Home",
+  "dashboard": "Workspace",
+  "users": "People",
+  "loading": "Loading…",
+  "noData": "No people yet",
+  "previous": "Previous",
+  "next": "Next",
+  "language": "Language",
+  "welcomeUser": "Hello, {name}",
+  "profileError": "Could not load your profile",
+  "usersTotal": "{count} accounts",
+  "pageLabel": "Page {page}",
+  "authAsideTitle": "One session. Three apps. One gateway.",
+  "authAsideBody": "Sign in once. Shell and dashboard share the same cookie and call identity through the NestJS gateway.",
+  "authAsideFoot": "Federated frontend POC"
+}

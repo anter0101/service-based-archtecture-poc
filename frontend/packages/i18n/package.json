@@ -1,0 +1,21 @@
+{
+  "name": "@dms/i18n",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./routing": "./src/routing.ts",
+    "./navigation": "./src/navigation.ts",
+    "./request": "./src/request.ts",
+    "./messages/*": "./src/messages/*"
+  },
+  "peerDependencies": {
+    "next-intl": "^4.0.0",
+    "react": "^19.0.0"
+  },
+  "dependencies": {
+    "next-intl": "^4.1.0"
+  }
+}

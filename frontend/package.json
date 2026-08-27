@@ -1,0 +1,20 @@
+{
+  "name": "dms-federated-frontend",
+  "private": true,
+  "packageManager": "pnpm@10.33.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "concurrently -n auth,shell,dashboard -c blue,green,magenta \"pnpm --filter @dms/auth-app dev\" \"pnpm --filter @dms/shell-app dev\" \"pnpm --filter @dms/dashboard-app dev\"",
+    "build": "pnpm -r --filter \"./apps/**\" build",
+    "lint": "pnpm -r --filter \"./apps/**\" lint",
+    "dev:auth": "pnpm --filter @dms/auth-app dev",
+    "dev:shell": "pnpm --filter @dms/shell-app dev",
+    "dev:dashboard": "pnpm --filter @dms/dashboard-app dev"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.5",
+    "typescript": "^5.7.3"
+  }
+}

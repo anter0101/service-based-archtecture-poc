@@ -1,0 +1,9 @@
+{
+  "title": "Your federated workspace starts here.",
+  "description": "Jump into the dashboard app to see your profile and the identity user directory — same session, different origin.",
+  "cards": {
+    "title": "Continue",
+    "dashboard": "Open dashboard",
+    "dashboardDesc": "Profile and paginated users via the gateway"
+  }
+}
